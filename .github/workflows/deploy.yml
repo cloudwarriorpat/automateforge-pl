@@ -1,0 +1,123 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_SHA_TAG: sha-${{ github.sha }}
+  IMAGE_LATEST_TAG: latest
+  NAMESPACE: automateforge-pl
+  RELEASE_NAME: automateforge-pl
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_SHA_TAG }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_LATEST_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'v1.29.0'
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubeconfig
+        run: |
+          if [ -z "${KUBECONFIG_CONTENTS}" ]; then
+            echo "ERROR: KUBECONFIG_CONTENTS secret is empty or not set"
+            exit 1
+          fi
+
+          # Prefer raw kubeconfig; fall back to base64 if needed.
+          echo "${KUBECONFIG_CONTENTS}" > kubeconfig
+          if ! grep -q '^apiVersion:' kubeconfig; then
+            if echo "${KUBECONFIG_CONTENTS}" | base64 -d > kubeconfig 2>/dev/null; then
+              if ! grep -q '^apiVersion:' kubeconfig; then
+                echo "ERROR: KUBECONFIG_CONTENTS does not look like a kubeconfig"
+                exit 1
+              fi
+            else
+              echo "ERROR: KUBECONFIG_CONTENTS is neither raw nor base64 kubeconfig"
+              exit 1
+            fi
+          fi
+
+          chmod 600 kubeconfig
+          export KUBECONFIG="${GITHUB_WORKSPACE}/kubeconfig"
+          kubectl cluster-info
+        env:
+          KUBECONFIG_CONTENTS: ${{ secrets.KUBECONFIG_CONTENTS }}
+
+      - name: Prepare namespace + pull secret
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+          # Ensure namespace is Helm-manageable
+          kubectl label namespace ${NAMESPACE} app.kubernetes.io/managed-by=Helm --overwrite || true
+          kubectl annotate namespace ${NAMESPACE} meta.helm.sh/release-name=${RELEASE_NAME} --overwrite || true
+          kubectl annotate namespace ${NAMESPACE} meta.helm.sh/release-namespace=${NAMESPACE} --overwrite || true
+
+          kubectl create secret docker-registry ghcr-pull-secret \
+            -n ${NAMESPACE} \
+            --docker-server=ghcr.io \
+            --docker-username=${{ secrets.GHCR_USERNAME }} \
+            --docker-password=${{ secrets.GHCR_TOKEN }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Helm upgrade/install
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          helm upgrade --install ${RELEASE_NAME} ./helm/app-template \
+            -n ${NAMESPACE} --create-namespace \
+            -f ./helm/values/automateforge-pl.yaml \
+            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.tag=${{ env.IMAGE_SHA_TAG }} \
+            --wait \
+            --timeout 10m
+
+      - name: Verify rollout
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
+        run: |
+          kubectl rollout status deploy/${RELEASE_NAME} -n ${NAMESPACE} --timeout=300s
+          kubectl get pods -n ${NAMESPACE}
+          kubectl get ingress -n ${NAMESPACE} || true
+

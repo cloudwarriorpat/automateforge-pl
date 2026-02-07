@@ -1,0 +1,70 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "app-template.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+{{- $domain := .Values.ingress.domain -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}
+  namespace: {{ include "app-template.namespace" . }}
+  labels:
+    {{- include "app-template.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.hosts }}
+  {{- if and .Values.ingress.tls.enabled .Values.ingress.hosts }}
+  tls:
+    - hosts:
+        {{- range .Values.ingress.hosts }}
+        - {{ . }}
+        {{- end }}
+      secretName: {{ $fullName }}-tls
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ . }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+    {{- end }}
+  {{- else if $domain }}
+  {{- if and .Values.ingress.tls.enabled $domain }}
+  tls:
+    - hosts:
+        - {{ $fullName }}.{{ $domain }}
+      secretName: {{ $fullName }}-tls
+  {{- end }}
+  rules:
+    - host: {{ $fullName }}.{{ $domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+  {{- else }}
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $fullName }}
+                port:
+                  number: {{ $svcPort }}
+  {{- end }}
+{{- end }}

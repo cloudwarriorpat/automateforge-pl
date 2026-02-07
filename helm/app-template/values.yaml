@@ -1,0 +1,151 @@
+# Default values for app-template
+# This is a YAML-formatted file.
+
+# Application name (required)
+name: "my-app"
+
+# Namespace (defaults to app name)
+namespace: ""
+
+# Container image
+image:
+  repository: "ghcr.io/your-org/your-app"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets (for private registries)
+imagePullSecrets: []
+  # - name: ghcr-secret
+
+# Replica count
+replicaCount: 1
+
+# Container port
+containerPort: 3000
+
+# Health checks
+healthCheck:
+  enabled: true
+  path: "/api/health"
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Resources
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+# Environment variables (non-sensitive)
+env: []
+  # - name: NODE_ENV
+  #   value: "production"
+  # - name: LOG_LEVEL
+  #   value: "info"
+
+# Environment variables from ConfigMap
+envFrom: []
+  # - configMapRef:
+  #     name: app-config
+
+# Secret environment variables (will be created)
+secretEnv: {}
+  # DATABASE_URL: "postgresql://..."
+  # API_KEY: "your-api-key"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "traefik"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  # Host will be: {name}.{domain}
+  domain: ""  # e.g., "example.com" -> app accessible at my-app.example.com
+  tls:
+    enabled: true
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: ""  # defaults to containerPort
+
+# PostgreSQL subchart configuration
+postgresql:
+  enabled: false
+  auth:
+    # Password will be auto-generated if not specified
+    password: ""
+    database: "app"
+    username: "app"
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Autoscaling
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Init containers
+initContainers: []
+
+# Sidecar containers
+sidecars: []
+
+# Volumes
+volumes: []
+
+# Volume mounts
+volumeMounts: []

@@ -1,0 +1,60 @@
+name: "automateforge-pl"
+namespace: "automateforge-pl"
+
+image:
+  repository: "ghcr.io/cloudwarriorpat/automateforge-pl"
+  tag: "latest"
+  pullPolicy: Always
+
+imagePullSecrets:
+  - name: ghcr-pull-secret
+
+replicaCount: 1
+containerPort: 3000
+
+healthCheck:
+  enabled: true
+  path: "/"
+  initialDelaySeconds: 3
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+ingress:
+  enabled: true
+  className: traefik
+  domain: "automateforge.pl"
+  hosts:
+    - automateforge.pl
+    - www.automateforge.pl
+  tls:
+    enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+postgresql:
+  enabled: false
+
+env:
+  - name: DISABLE_CACHE
+    value: "true"

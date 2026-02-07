@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  
+  /* Cyberpunk Accents - High Visibility */
+  --neon-green: #39ff14;
+  --neon-purple: #b026ff;
+  --matrix-green: #00ff41;
+  --alert-red: #ff3333;
+
+  /* Surfaces */
+  --card-bg: #111111;
+  --card-border: #333333;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom Utilities */
+.text-glow {
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+}
+
+.border-glow {
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+
+.grid-bg {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+}
