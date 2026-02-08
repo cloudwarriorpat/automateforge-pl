@@ -10,6 +10,7 @@ pnpm-debug.log*
 out
 build
 dist
+dist-ssr
 .turbo
 coverage
 
@@ -36,3 +37,6 @@ Thumbs.db
 *.md
 !README.md
 
+# Local tooling / backups
+.bolt
+legacy

@@ -13,11 +13,11 @@
 # testing
 /coverage
 
-# next.js
+# build outputs
+/dist
+/dist-ssr
 /.next/
 /out/
-
-# production
 /build
 
 # misc
@@ -31,11 +31,15 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
+
+# Local backups (kept out of git and docker context)
+legacy/

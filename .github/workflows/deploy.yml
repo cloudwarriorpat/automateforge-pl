@@ -35,8 +35,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and push image
         uses: docker/build-push-action@v5
@@ -120,4 +120,3 @@ jobs:
           kubectl rollout status deploy/${RELEASE_NAME} -n ${NAMESPACE} --timeout=300s
           kubectl get pods -n ${NAMESPACE}
           kubectl get ingress -n ${NAMESPACE} || true
-

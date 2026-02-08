@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-steel-950 text-steel-100 font-sans;
+    line-height: 1.5;
+  }
+
+  ::selection {
+    @apply bg-brand-500/30 text-white;
+  }
+}
+
+@layer components {
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-400 to-brand-600;
+  }
+
+  .glass-card {
+    @apply bg-steel-800/50 backdrop-blur-xl border border-steel-700/50 rounded-2xl;
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:border-brand-500/30 hover:bg-steel-800/70 hover:shadow-lg hover:shadow-brand-500/5;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-500 text-white font-semibold rounded-xl
+           transition-all duration-300 hover:bg-brand-600 hover:shadow-lg hover:shadow-brand-500/25
+           active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:ring-offset-2 focus:ring-offset-steel-900;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-steel-800 text-steel-100 font-semibold rounded-xl
+           border border-steel-700 transition-all duration-300 hover:bg-steel-700 hover:border-steel-600
+           active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-steel-500/50 focus:ring-offset-2 focus:ring-offset-steel-900;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-brand {
+    @apply badge bg-brand-500/10 text-brand-400 border border-brand-500/20;
+  }
+
+  .badge-steel {
+    @apply badge bg-steel-700/50 text-steel-300 border border-steel-600/50;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-steel-800/50 border border-steel-700/50 rounded-xl text-steel-100
+           placeholder:text-steel-500 transition-all duration-200
+           focus:outline-none focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/20;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+
+  .glow-brand {
+    box-shadow: 0 0 40px theme('colors.brand.500 / 15%'), 0 0 80px theme('colors.brand.500 / 5%');
+  }
+
+  .glow-brand-strong {
+    box-shadow: 0 0 60px theme('colors.brand.500 / 25%'), 0 0 120px theme('colors.brand.500 / 10%');
+  }
+}

@@ -1,4 +1,4 @@
-# Next.js (standalone) multi-stage build
+# Multi-stage build for Vite/React SPA
 FROM node:20-alpine AS base
 
 FROM base AS deps
@@ -13,28 +13,66 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+
+# Ensure Vite env vars are available during build even if .env is excluded by .dockerignore.
+# Supabase "anon" key is public and will be embedded into the client bundle either way.
+RUN if [ -f .env.example ] && [ ! -f .env ]; then cp .env.example .env; fi
 
 RUN npm run build
 
-FROM base AS runner
-WORKDIR /app
+# Production image with nginx (SPA routing via try_files)
+FROM nginx:alpine AS runner
+WORKDIR /usr/share/nginx/html
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
+# Copy build output
+COPY --from=builder /app/dist ./
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Entrypoint writes config to /tmp so it works with k8s securityContext runAsUser=1000.
+RUN cat > /entrypoint.sh << 'SCRIPT' && chmod +x /entrypoint.sh
+#!/bin/sh
+set -e
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+if [ "$DISABLE_CACHE" = "true" ]; then
+  CACHE_HEADERS="add_header Cache-Control \"no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0\" always;
+add_header Pragma \"no-cache\" always;
+add_header Expires \"0\" always;"
+else
+  CACHE_HEADERS=""
+fi
 
-USER nextjs
+cat > /tmp/nginx.conf <<EOF
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+events {
+  worker_connections 1024;
+}
+http {
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+  access_log /dev/stdout;
 
-EXPOSE 3000
+  client_body_temp_path /tmp;
+  proxy_temp_path /tmp;
+  fastcgi_temp_path /tmp;
+  uwsgi_temp_path /tmp;
+  scgi_temp_path /tmp;
 
-CMD ["node", "server.js"]
+  server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    location / {
+      try_files \$uri \$uri/ /index.html;
+      $CACHE_HEADERS
+    }
+  }
+}
+EOF
 
+exec nginx -c /tmp/nginx.conf -g "daemon off;"
+SCRIPT
+
+EXPOSE 80
+
+ENTRYPOINT ["/entrypoint.sh"]
