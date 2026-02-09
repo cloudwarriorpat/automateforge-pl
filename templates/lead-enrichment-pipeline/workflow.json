@@ -1,0 +1,313 @@
+{
+  "name": "Lead Enrichment Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "new-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000001",
+      "name": "Webhook - Nowy lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "new-lead-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Wyodrebnij i zwaliduj dane leada\nconst lead = items[0].json.body || items[0].json;\n\nconst companyName = lead.companyName || lead.firma || '';\nconst nip = (lead.nip || '').replace(/[\\s-]/g, '');\nconst email = lead.email || '';\nconst phone = lead.phone || lead.telefon || '';\nconst source = lead.source || lead.zrodlo || 'unknown';\nconst contactName = lead.contactName || lead.osoba || '';\n\n// Walidacja NIP (10 cyfr, checksum)\nlet nipValid = false;\nif (nip.length === 10 && /^\\d{10}$/.test(nip)) {\n  const weights = [6, 5, 7, 2, 3, 4, 5, 6, 7];\n  let sum = 0;\n  for (let i = 0; i < 9; i++) {\n    sum += parseInt(nip[i]) * weights[i];\n  }\n  nipValid = (sum % 11) === parseInt(nip[9]);\n}\n\nreturn [{\n  json: {\n    companyName: companyName,\n    nip: nip,\n    nipValid: nipValid,\n    email: email,\n    phone: phone,\n    source: source,\n    contactName: contactName,\n    receivedAt: new Date().toISOString(),\n    enrichmentNeeded: nipValid\n  }\n}];"
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000002",
+      "name": "Walidacja danych leada",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.nipValid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000003",
+      "name": "Czy NIP poprawny?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzwornik.svc",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/xml",
+        "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:ns=\"http://CIS/BIR/PUBL/2014/07\">\n  <soap:Header xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">\n    <wsa:Action>http://CIS/BIR/PUBL/2014/07/IUslugaBIR/Zaloguj</wsa:Action>\n    <wsa:To>https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzwornik.svc</wsa:To>\n  </soap:Header>\n  <soap:Body>\n    <ns:Zaloguj>\n      <ns:pKluczUzytkownika>TODO_KLUCZ_API_REGON</ns:pKluczUzytkownika>\n    </ns:Zaloguj>\n  </soap:Body>\n</soap:Envelope>",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/soap+xml; charset=utf-8"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000004",
+      "name": "REGON - Zaloguj",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzwornik.svc",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/xml",
+        "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<soap:Envelope xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:ns=\"http://CIS/BIR/PUBL/2014/07\" xmlns:dat=\"http://CIS/BIR/PUBL/2014/07/DataContract\">\n  <soap:Header xmlns:wsa=\"http://www.w3.org/2005/08/addressing\">\n    <wsa:Action>http://CIS/BIR/PUBL/2014/07/IUslugaBIR/DaneSzukajPodmioty</wsa:Action>\n    <wsa:To>https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzwornik.svc</wsa:To>\n  </soap:Header>\n  <soap:Body>\n    <ns:DaneSzukajPodmioty>\n      <ns:pParametryWyszukiwania>\n        <dat:Nip>{{ $('Walidacja danych leada').item.json.nip }}</dat:Nip>\n      </ns:pParametryWyszukiwania>\n    </ns:DaneSzukajPodmioty>\n  </soap:Body>\n</soap:Envelope>",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/soap+xml; charset=utf-8"
+            },
+            {
+              "name": "sid",
+              "value": "={{ $json.sessionId }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000005",
+      "name": "REGON - Szukaj podmiotu",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api-krs.ms.gov.pl/api/krs/OdpisFull/{{ $('Walidacja danych leada').item.json.nip }}?rejestr=P&format=json",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000,
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000006",
+      "name": "KRS - Pobierz dane",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [960, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Wzbogac dane leada o informacje z REGON i KRS\nconst lead = $('Walidacja danych leada').item.json;\nconst regonData = $('REGON - Szukaj podmiotu').item.json;\nconst krsData = $('KRS - Pobierz dane').item.json;\n\n// Parsuj dane REGON (z XML response)\nconst regon = {\n  regon: regonData.Regon || 'BRAK',\n  nazwa: regonData.Nazwa || lead.companyName,\n  wojewodztwo: regonData.Wojewodztwo || 'BRAK',\n  powiat: regonData.Powiat || 'BRAK',\n  gmina: regonData.Gmina || 'BRAK',\n  miejscowosc: regonData.Miejscowosc || 'BRAK',\n  kodPocztowy: regonData.KodPocztowy || 'BRAK',\n  ulica: regonData.Ulica || 'BRAK',\n  nrNieruchomosci: regonData.NrNieruchomosci || '',\n  typ: regonData.Typ || 'BRAK',\n  pkd: regonData.PKD || 'BRAK'\n};\n\n// Parsuj dane KRS\nconst krs = {\n  numerKRS: krsData.odppisPelnyJSON ? krsData.odppisPelnyJSON.naglowekA.numerKRS : 'BRAK',\n  formaOrganizacyjna: krsData.odppisPelnyJSON ? krsData.odppisPelnyJSON.naglowekA.formaOrganizacyjna : 'BRAK',\n  kapitalZakladowy: krsData.odppisPelnyJSON ? krsData.odppisPelnyJSON.dane.dzial1.danePodmiotu.kapitalZakladowy : null,\n  dataRejestracji: krsData.odppisPelnyJSON ? krsData.odppisPelnyJSON.naglowekA.dataWpisuDoRejestruKRS : 'BRAK'\n};\n\n// Scoring leada\nlet score = 0;\nlet scoringDetails = [];\n\n// Firma istnieje w REGON (+20)\nif (regon.regon !== 'BRAK') {\n  score += 20;\n  scoringDetails.push('+20: Firma zweryfikowana w REGON');\n}\n\n// Firma w KRS (+15)\nif (krs.numerKRS !== 'BRAK') {\n  score += 15;\n  scoringDetails.push('+15: Firma zarejestrowana w KRS');\n}\n\n// Kapital zakladowy\nif (krs.kapitalZakladowy) {\n  const kapital = parseFloat(krs.kapitalZakladowy);\n  if (kapital >= 100000) { score += 20; scoringDetails.push('+20: Kapital >= 100k PLN'); }\n  else if (kapital >= 50000) { score += 15; scoringDetails.push('+15: Kapital >= 50k PLN'); }\n  else if (kapital >= 5000) { score += 10; scoringDetails.push('+10: Kapital >= 5k PLN'); }\n}\n\n// Email firmowy (nie gmail/wp/onet)\nif (email && !email.match(/@(gmail|wp|onet|interia|o2|yahoo|hotmail)\\./i)) {\n  score += 15;\n  scoringDetails.push('+15: Email firmowy (nie darmowy)');\n} else if (email) {\n  score += 5;\n  scoringDetails.push('+5: Email darmowy');\n}\n\n// Telefon podany (+5)\nif (lead.phone) {\n  score += 5;\n  scoringDetails.push('+5: Telefon podany');\n}\n\n// Osoba kontaktowa (+10)\nif (lead.contactName) {\n  score += 10;\n  scoringDetails.push('+10: Osoba kontaktowa podana');\n}\n\n// Zrodlo\nconst sourceScores = { 'referral': 15, 'organic': 10, 'linkedin': 10, 'direct': 8, 'paid': 5, 'cold': 3 };\nconst sourceScore = sourceScores[lead.source] || 5;\nscore += sourceScore;\nscoringDetails.push(`+${sourceScore}: Zrodlo: ${lead.source}`);\n\n// Klasyfikacja\nlet tier;\nif (score >= 70) tier = 'A';\nelse if (score >= 50) tier = 'B';\nelse if (score >= 30) tier = 'C';\nelse tier = 'D';\n\n// Routing\nlet routeTo;\nif (tier === 'A') routeTo = '#sales-hot-leads';\nelse if (tier === 'B') routeTo = '#sales-warm-leads';\nelse routeTo = '#sales-cold-leads';\n\nconst email = lead.email;\n\nreturn [{\n  json: {\n    lead: {\n      companyName: regon.nazwa || lead.companyName,\n      nip: lead.nip,\n      email: lead.email,\n      phone: lead.phone,\n      contactName: lead.contactName,\n      source: lead.source\n    },\n    regon: regon,\n    krs: krs,\n    scoring: {\n      totalScore: score,\n      tier: tier,\n      details: scoringDetails\n    },\n    routing: {\n      slackChannel: routeTo,\n      priority: tier === 'A' ? 'WYSOKI' : tier === 'B' ? 'SREDNI' : 'NISKI'\n    },\n    enrichedAt: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000007",
+      "name": "Wzbogac i scoruj leada",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [1440, 300]
+    },
+    {
+      "parameters": {
+        "channel": "={{ $json.routing.slackChannel }}",
+        "text": ":bust_in_silhouette: *Nowy lead - Tier {{ $json.scoring.tier }}*\n\n*Firma:* {{ $json.lead.companyName }}\n*NIP:* {{ $json.lead.nip }}\n*REGON:* {{ $json.regon.regon }}\n*KRS:* {{ $json.krs.numerKRS }}\n\n*Kontakt:*\n• Osoba: {{ $json.lead.contactName || 'brak' }}\n• Email: {{ $json.lead.email }}\n• Telefon: {{ $json.lead.phone || 'brak' }}\n\n*Adres (REGON):*\n{{ $json.regon.ulica }} {{ $json.regon.nrNieruchomosci }}, {{ $json.regon.kodPocztowy }} {{ $json.regon.miejscowosc }}\n\n*Scoring:* {{ $json.scoring.totalScore }} pkt (Tier {{ $json.scoring.tier }})\n• {{ $json.scoring.details.join('\\n• ') }}\n\n*Priorytet:* {{ $json.routing.priority }}\n*Zrodlo:* {{ $json.lead.source }}",
+        "otherOptions": {}
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000008",
+      "name": "Slack - Przekaz leada",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1680, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'OK', tier: $json.scoring.tier, score: $json.scoring.totalScore, routed_to: $json.routing.slackChannel }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000009",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1920, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#sales-cold-leads",
+        "text": ":warning: *Lead z niepoprawnym NIP*\n\n• Firma: {{ $json.companyName }}\n• NIP: {{ $json.nip }} (niepoprawny)\n• Email: {{ $json.email }}\n• Telefon: {{ $json.phone || 'brak' }}\n• Zrodlo: {{ $json.source }}\n\nProsze zweryfikowac dane reczne.",
+        "otherOptions": {}
+      },
+      "id": "d1b2c3d4-0004-4000-8000-000000000010",
+      "name": "Slack - NIP niepoprawny",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [960, 520],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Nowy lead": {
+      "main": [
+        [
+          {
+            "node": "Walidacja danych leada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Walidacja danych leada": {
+      "main": [
+        [
+          {
+            "node": "Czy NIP poprawny?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Czy NIP poprawny?": {
+      "main": [
+        [
+          {
+            "node": "REGON - Zaloguj",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "KRS - Pobierz dane",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - NIP niepoprawny",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REGON - Zaloguj": {
+      "main": [
+        [
+          {
+            "node": "REGON - Szukaj podmiotu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REGON - Szukaj podmiotu": {
+      "main": [
+        [
+          {
+            "node": "Wzbogac i scoruj leada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KRS - Pobierz dane": {
+      "main": [
+        [
+          {
+            "node": "Wzbogac i scoruj leada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wzbogac i scoruj leada": {
+      "main": [
+        [
+          {
+            "node": "Slack - Przekaz leada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Przekaz leada": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "CRM",
+      "id": "tag-crm"
+    },
+    {
+      "name": "Lead Enrichment",
+      "id": "tag-enrichment"
+    },
+    {
+      "name": "AutomateForge",
+      "id": "tag-automateforge"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "versionId": "1"
+}

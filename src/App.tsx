@@ -6,6 +6,7 @@ import AgentsPage from './pages/Agents';
 import TemplatesPage from './pages/Templates';
 import ContactPage from './pages/Contact';
 import PartnersPage from './pages/Partners';
+import KSeFScannerPage from './pages/KSeFScanner';
 import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/ksef" element={<KSeFPage />} />
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/templates" element={<TemplatesPage />} />
+          <Route path="/skaner-ksef" element={<KSeFScannerPage />} />
           <Route path="/kontakt" element={<ContactPage />} />
           <Route path="/partnerzy" element={<PartnersPage />} />
           <Route path="/blog" element={<Navigate to="/" replace />} />

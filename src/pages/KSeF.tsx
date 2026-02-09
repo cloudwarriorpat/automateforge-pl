@@ -164,13 +164,14 @@ export default function KSeFPage() {
               To Twoja szansa, zeby byc krok przed konkurencja.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/kontakt" className="btn-primary text-base px-8 py-4">
+              <Link to="/skaner-ksef" className="btn-primary text-base px-8 py-4">
+                Sprawdz gotowosc KSeF
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+              <Link to="/kontakt" className="btn-secondary text-base px-8 py-4">
                 Bezplatny audyt KSeF
                 <ChevronRight className="w-5 h-5" />
               </Link>
-              <a href="#cennik" className="btn-secondary text-base px-8 py-4">
-                Zobacz cennik
-              </a>
             </div>
           </div>
         </div>

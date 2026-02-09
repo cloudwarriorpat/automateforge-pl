@@ -1,0 +1,333 @@
+{
+  "name": "BaseLinker InPost Tracker",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000001",
+      "name": "Cron - Co 15 minut",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.baselinker.com/connector.php",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{ $credentials.httpHeaderAuth.value }}"
+            },
+            {
+              "name": "method",
+              "value": "getOrders"
+            },
+            {
+              "name": "parameters",
+              "value": "{\"status_id\": \"TODO_STATUS_WYSLANE\", \"date_from\": {{ Math.floor(Date.now()/1000) - 86400 }}, \"get_unconfirmed_orders\": false}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000002",
+      "name": "BaseLinker - Pobierz zamowienia",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [480, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TODO_BASELINKER_CREDENTIALS_ID",
+          "name": "BaseLinker API Token - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Wyodrebnij zamowienia z odpowiedzi BaseLinker\nconst response = items[0].json;\n\nif (!response.orders || response.orders.length === 0) {\n  return [{ json: { noOrders: true, message: 'Brak zamowien do sprawdzenia.' } }];\n}\n\n// Filtruj zamowienia z numerem przesylki InPost\nconst ordersWithTracking = response.orders.filter(order => {\n  const trackingNumber = order.delivery_tracking_number || '';\n  // Numery InPost zaczynaja sie od cyfr i maja 24 znaki\n  return trackingNumber.length >= 10 && order.delivery_method_name && \n         order.delivery_method_name.toLowerCase().includes('inpost');\n});\n\nreturn ordersWithTracking.map(order => ({\n  json: {\n    orderId: order.order_id,\n    orderSource: order.order_source,\n    trackingNumber: order.delivery_tracking_number,\n    deliveryMethod: order.delivery_method_name,\n    buyerEmail: order.email,\n    buyerPhone: order.phone,\n    currentStatus: order.order_status_id,\n    orderDate: order.date_add\n  }\n}));"
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000003",
+      "name": "Filtruj zamowienia InPost",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.noOrders }}",
+              "operation": "notEqual",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000004",
+      "name": "Czy sa zamowienia?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api-shipx-pl.easypack24.net/v1/tracking/{{ $json.trackingNumber }}",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TODO_INPOST_API_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000,
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000005",
+      "name": "InPost - Sprawdz status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mapuj status InPost na status BaseLinker\nconst inpostStatus = items[0].json.status || 'unknown';\nconst trackingDetails = items[0].json.tracking_details || [];\nconst lastEvent = trackingDetails.length > 0 ? trackingDetails[trackingDetails.length - 1] : null;\n\n// TODO: Dostosuj mapowanie statusow do swojej konfiguracji BaseLinker\nconst statusMap = {\n  'created': { blStatus: null, label: 'Utworzona' },\n  'offers_prepared': { blStatus: null, label: 'Przygotowana' },\n  'offer_selected': { blStatus: null, label: 'Wybrana oferta' },\n  'collected_from_sender': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'Odebrana od nadawcy' },\n  'taken_by_courier': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'U kuriera' },\n  'adopted_at_source_branch': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'W oddziale zrodlowym' },\n  'sent_from_source_branch': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'Wyslana z oddzialu' },\n  'adopted_at_sorting_center': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'W centrum sortowania' },\n  'sent_from_sorting_center': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'Wyslana z centrum' },\n  'other_adopted': { blStatus: 'TODO_STATUS_W_TRANSPORCIE', label: 'W transporcie' },\n  'ready_to_pickup': { blStatus: 'TODO_STATUS_DO_ODBIORU', label: 'Gotowa do odbioru' },\n  'out_for_delivery': { blStatus: 'TODO_STATUS_W_DOSTARCZANIU', label: 'W dostarczaniu' },\n  'delivered': { blStatus: 'TODO_STATUS_DOSTARCZONO', label: 'Dostarczona' },\n  'pickup_reminder_sent': { blStatus: 'TODO_STATUS_DO_ODBIORU', label: 'Przypomnienie wyslane' },\n  'returned_to_sender': { blStatus: 'TODO_STATUS_ZWROT', label: 'Zwrot do nadawcy' },\n  'avizo': { blStatus: 'TODO_STATUS_DO_ODBIORU', label: 'Avizo' }\n};\n\nconst mapped = statusMap[inpostStatus] || { blStatus: null, label: inpostStatus };\n\nreturn [{\n  json: {\n    orderId: $('Filtruj zamowienia InPost').item.json.orderId,\n    trackingNumber: $('Filtruj zamowienia InPost').item.json.trackingNumber,\n    buyerEmail: $('Filtruj zamowienia InPost').item.json.buyerEmail,\n    inpostStatus: inpostStatus,\n    inpostLabel: mapped.label,\n    baselinkerNewStatus: mapped.blStatus,\n    shouldUpdate: mapped.blStatus !== null,\n    lastEventDate: lastEvent ? lastEvent.datetime : null,\n    lastEventDescription: lastEvent ? lastEvent.status : null\n  }\n}];"
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000006",
+      "name": "Mapuj status InPost na BaseLinker",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.shouldUpdate }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000007",
+      "name": "Czy aktualizowac status?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1680, 200]
+    },
+    {
+      "parameters": {
+        "url": "https://api.baselinker.com/connector.php",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "={{ $credentials.httpHeaderAuth.value }}"
+            },
+            {
+              "name": "method",
+              "value": "setOrderStatus"
+            },
+            {
+              "name": "parameters",
+              "value": "{\"order_id\": {{ $json.orderId }}, \"status_id\": \"{{ $json.baselinkerNewStatus }}\"}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000008",
+      "name": "BaseLinker - Aktualizuj status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1920, 120],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TODO_BASELINKER_CREDENTIALS_ID",
+          "name": "BaseLinker API Token - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "channel": "#zamowienia",
+        "text": ":package: *Aktualizacja przesylki InPost*\n\n• Zamowienie: #{{ $json.orderId }}\n• Nr przesylki: {{ $json.trackingNumber }}\n• Status InPost: {{ $json.inpostLabel }}\n• Nowy status BaseLinker: {{ $json.baselinkerNewStatus }}\n• Ostatnie zdarzenie: {{ $json.lastEventDescription || 'brak' }}",
+        "otherOptions": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000009",
+      "name": "Slack - Powiadomienie o zmianie",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2160, 120],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b1b2c3d4-0002-4000-8000-000000000010",
+      "name": "Brak zmian - Koniec",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1920, 300]
+    }
+  ],
+  "connections": {
+    "Cron - Co 15 minut": {
+      "main": [
+        [
+          {
+            "node": "BaseLinker - Pobierz zamowienia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BaseLinker - Pobierz zamowienia": {
+      "main": [
+        [
+          {
+            "node": "Filtruj zamowienia InPost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtruj zamowienia InPost": {
+      "main": [
+        [
+          {
+            "node": "Czy sa zamowienia?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Czy sa zamowienia?": {
+      "main": [
+        [
+          {
+            "node": "InPost - Sprawdz status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "InPost - Sprawdz status": {
+      "main": [
+        [
+          {
+            "node": "Mapuj status InPost na BaseLinker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapuj status InPost na BaseLinker": {
+      "main": [
+        [
+          {
+            "node": "Czy aktualizowac status?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Czy aktualizowac status?": {
+      "main": [
+        [
+          {
+            "node": "BaseLinker - Aktualizuj status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Brak zmian - Koniec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BaseLinker - Aktualizuj status": {
+      "main": [
+        [
+          {
+            "node": "Slack - Powiadomienie o zmianie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "BaseLinker",
+      "id": "tag-baselinker"
+    },
+    {
+      "name": "InPost",
+      "id": "tag-inpost"
+    },
+    {
+      "name": "AutomateForge",
+      "id": "tag-automateforge"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "versionId": "1"
+}
