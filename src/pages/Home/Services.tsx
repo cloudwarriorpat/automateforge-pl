@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Shield, Bot, Zap, ArrowRight, FileCheck, Cpu, ShoppingBag, BarChart3, Users, Lock } from 'lucide-react';
+import { Shield, Bot, Zap, ArrowRight } from 'lucide-react';
 import SectionHeading from '../../components/SectionHeading';
 import { useInView } from '../../hooks/useInView';
 
@@ -40,15 +40,6 @@ const SERVICES = [
     borderColor: 'border-brand-500/20',
     textColor: 'text-brand-400',
   },
-];
-
-const EXTRA_SERVICES = [
-  { icon: FileCheck, label: 'AI Act Governance Kit', desc: 'Compliance w 10 dni' },
-  { icon: Cpu, label: 'Managed n8n', desc: 'Bezpieczny self-host' },
-  { icon: ShoppingBag, label: 'GTM Engineering', desc: 'Lead to Call w 24h' },
-  { icon: BarChart3, label: 'NIS2 Readiness', desc: 'Automatyzacja procedur' },
-  { icon: Users, label: 'Szkolenia AI', desc: 'AI Literacy dla zespolow' },
-  { icon: Lock, label: 'Audyt bezpieczenstwa', desc: 'Automatyzacji i integracji' },
 ];
 
 function ServiceCard({ service, index }: { service: typeof SERVICES[0]; index: number }) {
@@ -100,8 +91,6 @@ function ServiceCard({ service, index }: { service: typeof SERVICES[0]; index: n
 }
 
 export default function Services() {
-  const { ref: extraRef, isInView: extraInView } = useInView();
-
   return (
     <section className="py-24 lg:py-32 relative">
       <div className="absolute inset-0 bg-gradient-to-b from-steel-950 via-steel-900/30 to-steel-950" />
@@ -114,34 +103,10 @@ export default function Services() {
           description="Kazda firma ma inne potrzeby. Dlatego oferujemy trzy podejscia -- od pilnych wdrozen compliance, przez agentow AI, po gotowe szablony do natychmiastowego uzycia."
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {SERVICES.map((service, i) => (
             <ServiceCard key={service.title} service={service} index={i} />
           ))}
-        </div>
-
-        <div ref={extraRef}>
-          <h3 className={`text-center text-xl font-semibold text-white mb-8 transition-all duration-500 ${extraInView ? 'opacity-100' : 'opacity-0'}`}>
-            Rowniez oferujemy
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {EXTRA_SERVICES.map((item, i) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.label}
-                  className={`glass-card-hover p-5 text-center transition-all duration-500 ${
-                    extraInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                  }`}
-                  style={{ transitionDelay: `${i * 80}ms` }}
-                >
-                  <Icon className="w-6 h-6 text-brand-400 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-white mb-1">{item.label}</p>
-                  <p className="text-xs text-steel-400">{item.desc}</p>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </section>

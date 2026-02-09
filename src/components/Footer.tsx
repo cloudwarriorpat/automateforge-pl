@@ -1,63 +1,22 @@
-import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Hammer, Mail, MapPin, ArrowUpRight, ArrowRight } from 'lucide-react';
+import { Hammer, Mail, MapPin, ArrowUpRight } from 'lucide-react';
 
 const FOOTER_LINKS = {
   'Uslugi': [
     { to: '/ksef', label: 'KSeF Studio' },
     { to: '/agents', label: 'AI Agents' },
-    { to: '/templates', label: 'Szablony automatyzacji' },
+    { to: '/templates', label: 'Szablony' },
   ],
   'Firma': [
     { to: '/kontakt', label: 'Kontakt' },
     { to: '/partnerzy', label: 'Program partnerski' },
-    { to: '/blog', label: 'Blog' },
     { to: '/kontakt', label: 'Bezplatny audyt' },
   ],
 };
 
 export default function Footer() {
-  const [email, setEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
-
-  function handleNewsletterSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (email) {
-      setSubscribed(true);
-      setEmail('');
-    }
-  }
-
   return (
     <footer className="border-t border-steel-800/50 bg-steel-950">
-      {/* Newsletter */}
-      <div className="section-container py-12 border-b border-steel-800/50">
-        <div className="max-w-2xl mx-auto text-center">
-          <h3 className="text-xl font-bold text-white mb-2">Cotygodniowy newsletter</h3>
-          <p className="text-sm text-steel-400 mb-6">
-            Tipy automatyzacji, nowosci KSeF i case studies. Bez spamu.
-          </p>
-          {subscribed ? (
-            <p className="text-emerald-400 text-sm font-medium">Dziekujemy za subskrypcje!</p>
-          ) : (
-            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
-              <input
-                type="email"
-                required
-                placeholder="twoj@email.pl"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input-field flex-1"
-              />
-              <button type="submit" className="btn-primary whitespace-nowrap">
-                Subskrybuj
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          )}
-        </div>
-      </div>
-
       <div className="section-container py-16 lg:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           <div className="lg:col-span-2">
@@ -112,8 +71,8 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} AutomateForge. Wszelkie prawa zastrzezone.
           </p>
           <div className="flex items-center gap-6 text-sm text-steel-500">
-            <span>Polityka prywatnosci</span>
-            <span>Regulamin</span>
+            <Link to="/polityka-prywatnosci" className="hover:text-steel-300 transition-colors">Polityka prywatnosci</Link>
+            <Link to="/regulamin" className="hover:text-steel-300 transition-colors">Regulamin</Link>
           </div>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
-  Bot, ChevronRight, Mail, Users, Receipt, Brain,
+  Bot, ChevronRight, Mail, Receipt, Brain,
   CheckCircle2, ArrowRight, Eye, Cog, BarChart3,
-  MessageSquare, Target, FileSearch
+  Target
 } from 'lucide-react';
 import SectionHeading from '../components/SectionHeading';
 import Guarantee from '../components/Guarantee';
@@ -13,49 +13,25 @@ const AGENTS = [
     icon: Mail,
     title: 'Triage maili',
     description: 'Klasyfikuje przychodzace maile (faktury, reklamacje, dostawcy, zapytania), tworzy zadania w Asanie/Jirze, taguje, proponuje odpowiedzi.',
-    stats: '15 000+ maili/mies.',
-    accuracy: '94% trafnosc',
+    stats: 'Klasyfikacja i routing',
+    accuracy: 'Z czlowiekiem w petli',
     tools: ['Gmail', 'Outlook', 'Asana', 'Jira', 'Slack'],
   },
   {
     icon: Target,
     title: 'Kwalifikacja leadow',
     description: 'Research firmy, scoring na bazie ICP, enrichment danych, automatyczny follow-up i routing do handlowca z kontekstem.',
-    stats: '3x wiecej SQL',
-    accuracy: 'Lead to Call 24h',
+    stats: 'Research + scoring + routing',
+    accuracy: 'Automatyczny follow-up',
     tools: ['Pipedrive', 'HubSpot', 'Apollo', 'LinkedIn', 'Lemlist'],
   },
   {
     icon: Receipt,
     title: 'Kontrola kosztow',
     description: 'Analiza faktur i umow: wykrywanie anomalii, duplikatow, przekroczen budzetow. Automatyczne alerty i raporty.',
-    stats: '85% mniej manualnej pracy',
-    accuracy: '99.2% detekcja',
+    stats: 'Anomalie, duplikaty, budzety',
+    accuracy: 'Alerty w czasie rzeczywistym',
     tools: ['ifirma', 'wFirma', 'Google Sheets', 'Slack', 'Power BI'],
-  },
-  {
-    icon: MessageSquare,
-    title: 'Obsluga klienta L1',
-    description: 'Odpowiada na FAQ, przekierowuje zlozone sprawy, tworzy tickety, eskaluje pilne problemy. Czlowiek w petli na L2+.',
-    stats: '70% spraw bez eskalacji',
-    accuracy: '< 30s czas reakcji',
-    tools: ['Intercom', 'Zendesk', 'Slack', 'Notion'],
-  },
-  {
-    icon: FileSearch,
-    title: 'Analiza dokumentow',
-    description: 'Ekstrakcja danych z umow, ofert, faktur. Porownywanie warunkow, wykrywanie ryzyk, generowanie podsumoan.',
-    stats: '10x szybciej niz recznie',
-    accuracy: '97% dokladnosc',
-    tools: ['Google Drive', 'SharePoint', 'Notion', 'Slack'],
-  },
-  {
-    icon: Users,
-    title: 'Onboarding HR',
-    description: 'Automatyczny onboarding nowych pracownikow: dokumenty, dostepy, zadania szkoleniowe, przypomnienia, checklisty.',
-    stats: '90% automatyzacji',
-    accuracy: '0 pominiectych krokow',
-    tools: ['Google Workspace', 'Slack', 'Notion', 'BambooHR'],
   },
 ];
 

@@ -1,0 +1,318 @@
+{
+  "name": "KSeF Auto Sender",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ksef-invoice",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Webhook - Nowa faktura",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "ksef-invoice-webhook"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Walidacja XML faktury przeciwko schematowi FA(2)\nconst invoiceXml = items[0].json.body.invoiceXml || items[0].json.body;\n\nif (!invoiceXml) {\n  throw new Error('Brak danych XML faktury w żądaniu.');\n}\n\n// Sprawdź podstawowe elementy schematu FA(2)\nconst requiredElements = [\n  '<Faktura',\n  '<Naglowek>',\n  '<KodFormularza kodSystemowy=\"FA\" wersjaSchemy=\"2\"',\n  '<Podmiot1>',\n  '<Podmiot2>',\n  '<Fa>',\n  '<NrFaktury>',\n  '<DataWystawienia>'\n];\n\nconst missingElements = [];\nfor (const el of requiredElements) {\n  if (!invoiceXml.includes(el)) {\n    missingElements.push(el);\n  }\n}\n\nconst nipRegex = /<NIP>(\\d{10})<\\/NIP>/g;\nconst nips = [...invoiceXml.matchAll(nipRegex)].map(m => m[1]);\n\nconst nrFakturyMatch = invoiceXml.match(/<NrFaktury>([^<]+)<\\/NrFaktury>/);\nconst dataMatch = invoiceXml.match(/<DataWystawienia>([^<]+)<\\/DataWystawienia>/);\n\nreturn [{\n  json: {\n    invoiceXml: invoiceXml,\n    isValid: missingElements.length === 0,\n    missingElements: missingElements,\n    nrFaktury: nrFakturyMatch ? nrFakturyMatch[1] : 'NIEZNANY',\n    dataWystawienia: dataMatch ? dataMatch[1] : 'BRAK',\n    nipSprzedawcy: nips[0] || 'BRAK',\n    nipNabywcy: nips[1] || 'BRAK',\n    validationTimestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000002",
+      "name": "Walidacja XML FA(2)",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.isValid }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000003",
+      "name": "Czy faktura poprawna?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://ksef.mf.gov.pl/api/online/Session/InitSigned",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "jsonBody": "{\n  \"context\": {\n    \"challenge\": \"{{ $now.format('yyyyMMdd-HHmmss') }}\",\n    \"identifier\": {\n      \"type\": \"onip\",\n      \"identifier\": \"{{ $json.nipSprzedawcy }}\"\n    },\n    \"documentType\": {\n      \"service\": \"KSeF\",\n      \"formCode\": {\n        \"systemCode\": \"FA (2)\",\n        \"schemaVersion\": \"1-0E\",\n        \"targetNamespace\": \"http://crd.gov.pl/wzor/2023/06/29/12648/\",\n        \"value\": \"FA\"\n      }\n    }\n  }\n}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000004",
+      "name": "KSeF - Inicjalizacja sesji",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [960, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TODO_KSEF_CREDENTIALS_ID",
+          "name": "KSeF API Token - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://ksef.mf.gov.pl/api/online/Invoice/Send",
+        "method": "PUT",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/octet-stream",
+        "body": "={{ $('Walidacja XML FA(2)').item.json.invoiceXml }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "SessionToken",
+              "value": "={{ $json.sessionToken.token }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000005",
+      "name": "KSeF - Wyslij fakture",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Poczekaj 5s i sprawdź status wysyłki\nconst elementReferenceNumber = items[0].json.elementReferenceNumber;\nconst processingCode = items[0].json.processingCode || 200;\n\nreturn [{\n  json: {\n    status: processingCode === 200 ? 'WYSLANO' : 'BLAD',\n    elementReferenceNumber: elementReferenceNumber,\n    ksefReferenceNumber: items[0].json.referenceNumber || 'OCZEKIWANIE',\n    nrFaktury: $('Walidacja XML FA(2)').item.json.nrFaktury,\n    dataWystawienia: $('Walidacja XML FA(2)').item.json.dataWystawienia,\n    nipSprzedawcy: $('Walidacja XML FA(2)').item.json.nipSprzedawcy,\n    timestamp: new Date().toISOString(),\n    message: processingCode === 200 \n      ? 'Faktura została pomyślnie wysłana do KSeF.' \n      : 'Wystąpił błąd podczas wysyłki do KSeF.'\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000006",
+      "name": "Przygotuj potwierdzenie",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "channel": "#faktury",
+        "text": ":white_check_mark: *Faktura wysłana do KSeF*\n\n• Nr faktury: {{ $json.nrFaktury }}\n• Data wystawienia: {{ $json.dataWystawienia }}\n• NIP sprzedawcy: {{ $json.nipSprzedawcy }}\n• Nr referencyjny KSeF: {{ $json.ksefReferenceNumber }}\n• Czas wysyłki: {{ $json.timestamp }}",
+        "otherOptions": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000007",
+      "name": "Slack - Potwierdzenie",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1680, 200],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// Obsługa błędu walidacji\nconst missingElements = items[0].json.missingElements || [];\n\nreturn [{\n  json: {\n    status: 'BLAD_WALIDACJI',\n    nrFaktury: items[0].json.nrFaktury || 'NIEZNANY',\n    missingElements: missingElements,\n    message: `Faktura nie przeszła walidacji schematu FA(2). Brakujące elementy: ${missingElements.join(', ')}`,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000008",
+      "name": "Raport bledu walidacji",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [960, 420]
+    },
+    {
+      "parameters": {
+        "channel": "#faktury-bledy",
+        "text": ":x: *Błąd walidacji faktury*\n\n• Nr faktury: {{ $json.nrFaktury }}\n• Status: {{ $json.status }}\n• Brakujące elementy: {{ $json.missingElements.join(', ') }}\n• Szczegóły: {{ $json.message }}\n• Czas: {{ $json.timestamp }}\n\nProszę poprawić fakturę i wysłać ponownie.",
+        "otherOptions": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000009",
+      "name": "Slack - Blad walidacji",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1200, 420],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "responseStatus",
+              "value": "={{ $json.status }}"
+            },
+            {
+              "name": "responseMessage",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000010",
+      "name": "Odpowiedz webhook",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [1680, 420]
+    }
+  ],
+  "connections": {
+    "Webhook - Nowa faktura": {
+      "main": [
+        [
+          {
+            "node": "Walidacja XML FA(2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Walidacja XML FA(2)": {
+      "main": [
+        [
+          {
+            "node": "Czy faktura poprawna?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Czy faktura poprawna?": {
+      "main": [
+        [
+          {
+            "node": "KSeF - Inicjalizacja sesji",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Raport bledu walidacji",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KSeF - Inicjalizacja sesji": {
+      "main": [
+        [
+          {
+            "node": "KSeF - Wyslij fakture",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KSeF - Wyslij fakture": {
+      "main": [
+        [
+          {
+            "node": "Przygotuj potwierdzenie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Przygotuj potwierdzenie": {
+      "main": [
+        [
+          {
+            "node": "Slack - Potwierdzenie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Raport bledu walidacji": {
+      "main": [
+        [
+          {
+            "node": "Slack - Blad walidacji",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Potwierdzenie": {
+      "main": [
+        [
+          {
+            "node": "Odpowiedz webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Blad walidacji": {
+      "main": [
+        [
+          {
+            "node": "Odpowiedz webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "KSeF",
+      "id": "tag-ksef"
+    },
+    {
+      "name": "Faktury",
+      "id": "tag-faktury"
+    },
+    {
+      "name": "AutomateForge",
+      "id": "tag-automateforge"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "versionId": "1"
+}

@@ -82,7 +82,6 @@ const BONUSES = [
   { title: 'Audyt gotowosci KSeF', value: '1 500' },
   { title: 'Szablon polityki e-fakturowania', value: '800' },
   { title: 'Checklisty walidacji JPK-V7M/K', value: '500' },
-  { title: 'Nagranie wideo "KSeF od A do Z"', value: '997' },
 ];
 
 function PricingCard({ plan, index }: { plan: typeof PRICING[0]; index: number }) {
@@ -165,13 +164,14 @@ export default function KSeFPage() {
               To Twoja szansa, zeby byc krok przed konkurencja.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/kontakt" className="btn-primary text-base px-8 py-4">
+              <Link to="/skaner-ksef" className="btn-primary text-base px-8 py-4">
+                Sprawdz gotowosc KSeF
+                <ChevronRight className="w-5 h-5" />
+              </Link>
+              <Link to="/kontakt" className="btn-secondary text-base px-8 py-4">
                 Bezplatny audyt KSeF
                 <ChevronRight className="w-5 h-5" />
               </Link>
-              <a href="#cennik" className="btn-secondary text-base px-8 py-4">
-                Zobacz cennik
-              </a>
             </div>
           </div>
         </div>
@@ -303,7 +303,7 @@ export default function KSeFPage() {
 
             <div className="glass-card p-8 text-center border-brand-500/20 glow-brand">
               <p className="text-steel-400 mb-2">Pakiet Pro + wszystkie bonusy</p>
-              <p className="text-sm text-steel-500 line-through mb-1">Wartosc: 13 787 PLN</p>
+              <p className="text-sm text-steel-500 line-through mb-1">Wartosc: 12 790 PLN</p>
               <p className="text-4xl font-bold text-white mb-2">9 990 PLN <span className="text-lg font-normal text-steel-400">jednorazowo</span></p>
               <p className="text-sm text-steel-500 mb-6">+ 3 000 PLN/mies. abonament</p>
               <Link to="/kontakt" className="btn-primary text-base px-8 py-4">

@@ -1,0 +1,436 @@
+{
+  "name": "Daily Slack Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000001",
+      "name": "Cron - Codziennie 8:00 Pn-Pt",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [240, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://api.baselinker.com/connector.php",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "TODO_BASELINKER_TOKEN"
+            },
+            {
+              "name": "method",
+              "value": "getOrders"
+            },
+            {
+              "name": "parameters",
+              "value": "{\"date_from\": {{ Math.floor((Date.now() - 86400000)/1000) }}, \"get_unconfirmed_orders\": false}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000002",
+      "name": "BaseLinker - Zamowienia z wczoraj",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 200]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  COUNT(*) as liczba_faktur,\n  SUM(kwota_brutto) as suma_brutto,\n  SUM(CASE WHEN status = 'wyslana_ksef' THEN 1 ELSE 0 END) as wyslane_ksef,\n  SUM(CASE WHEN status = 'blad' THEN 1 ELSE 0 END) as bledy\nFROM faktury\nWHERE data_wprowadzenia >= CURRENT_DATE - INTERVAL '1 day'\n  AND data_wprowadzenia < CURRENT_DATE;",
+        "options": {}
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000003",
+      "name": "SQL - Faktury z wczoraj",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [520, 400],
+      "credentials": {
+        "postgres": {
+          "id": "TODO_POSTGRES_CREDENTIALS_ID",
+          "name": "Baza danych - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://TODO_N8N_INSTANCE/api/v1/executions?limit=100&status=error&startedAfter={{ encodeURIComponent(new Date(Date.now() - 86400000).toISOString()) }}",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-API-KEY",
+              "value": "TODO_N8N_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000004",
+      "name": "n8n API - Bledy wykonan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://TODO_ANALYTICS_API/api/v1/stats?period=yesterday",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer TODO_ANALYTICS_TOKEN"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000005",
+      "name": "Analytics - Statystyki www",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [520, 800]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Przetworz dane z BaseLinker\nconst orders = items[0].json.orders || [];\n\nconst totalOrders = orders.length;\nconst totalRevenue = orders.reduce((sum, o) => sum + parseFloat(o.payment_done || 0), 0);\nconst avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(2) : 0;\n\nconst bySource = {};\nfor (const order of orders) {\n  const source = order.order_source || 'inne';\n  if (!bySource[source]) bySource[source] = { count: 0, revenue: 0 };\n  bySource[source].count++;\n  bySource[source].revenue += parseFloat(order.payment_done || 0);\n}\n\nconst statusCounts = {};\nfor (const order of orders) {\n  const status = order.order_status_id || 'nieznany';\n  statusCounts[status] = (statusCounts[status] || 0) + 1;\n}\n\nreturn [{\n  json: {\n    orders: {\n      total: totalOrders,\n      totalRevenue: totalRevenue.toFixed(2),\n      avgOrderValue: avgOrderValue,\n      bySource: bySource,\n      statusCounts: statusCounts\n    }\n  }\n}];"
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000006",
+      "name": "Przetworz zamowienia",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [800, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Przetworz dane faktur\nconst data = items[0].json;\n\nreturn [{\n  json: {\n    invoices: {\n      total: parseInt(data.liczba_faktur) || 0,\n      totalBrutto: parseFloat(data.suma_brutto || 0).toFixed(2),\n      sentToKsef: parseInt(data.wyslane_ksef) || 0,\n      errors: parseInt(data.bledy) || 0\n    }\n  }\n}];"
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000007",
+      "name": "Przetworz faktury",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [800, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Przetworz bledy n8n\nconst response = items[0].json;\nconst executions = response.data || [];\n\nconst errorCount = executions.length;\nconst errorsByWorkflow = {};\n\nfor (const exec of executions) {\n  const wfName = exec.workflowData ? exec.workflowData.name : 'Nieznany';\n  if (!errorsByWorkflow[wfName]) errorsByWorkflow[wfName] = 0;\n  errorsByWorkflow[wfName]++;\n}\n\nreturn [{\n  json: {\n    n8nErrors: {\n      totalErrors: errorCount,\n      byWorkflow: errorsByWorkflow,\n      topErrors: Object.entries(errorsByWorkflow)\n        .sort((a, b) => b[1] - a[1])\n        .slice(0, 5)\n        .map(([name, count]) => `${name}: ${count}`)\n    }\n  }\n}];"
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000008",
+      "name": "Przetworz bledy n8n",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [800, 600]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Przetworz statystyki www\nconst data = items[0].json;\n\nreturn [{\n  json: {\n    analytics: {\n      pageViews: data.pageViews || data.page_views || 0,\n      uniqueVisitors: data.uniqueVisitors || data.unique_visitors || 0,\n      bounceRate: data.bounceRate || data.bounce_rate || '0%',\n      topPages: data.topPages || data.top_pages || []\n    }\n  }\n}];"
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000009",
+      "name": "Przetworz analytics",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [800, 800]
+    },
+    {
+      "parameters": {
+        "mode": "multiplex",
+        "options": {}
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000010",
+      "name": "Polacz wszystkie dane",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1080, 400]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Zbuduj dzienny raport\nconst allData = items.map(i => i.json);\n\n// Zbierz dane z roznych zrodel\nlet orders = { total: 0, totalRevenue: '0.00', avgOrderValue: '0.00' };\nlet invoices = { total: 0, totalBrutto: '0.00', sentToKsef: 0, errors: 0 };\nlet n8nErrors = { totalErrors: 0, topErrors: [] };\nlet analytics = { pageViews: 0, uniqueVisitors: 0, bounceRate: '0%' };\n\nfor (const data of allData) {\n  if (data.orders) orders = data.orders;\n  if (data.invoices) invoices = data.invoices;\n  if (data.n8nErrors) n8nErrors = data.n8nErrors;\n  if (data.analytics) analytics = data.analytics;\n}\n\nconst yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];\n\n// Emoji statusow\nconst orderEmoji = orders.total > 0 ? ':chart_with_upwards_trend:' : ':chart_with_downwards_trend:';\nconst errorEmoji = n8nErrors.totalErrors === 0 ? ':white_check_mark:' : ':warning:';\nconst invoiceEmoji = invoices.errors === 0 ? ':white_check_mark:' : ':x:';\n\nconst digestText = `:newspaper: *Codzienny raport - ${yesterday}*\\n\\n` +\n  `---\\n` +\n  `${orderEmoji} *Zamowienia (BaseLinker)*\\n` +\n  `• Liczba zamowien: *${orders.total}*\\n` +\n  `• Przychod: *${orders.totalRevenue} PLN*\\n` +\n  `• Srednia wartosc: *${orders.avgOrderValue} PLN*\\n\\n` +\n  `${invoiceEmoji} *Faktury*\\n` +\n  `• Wystawione: *${invoices.total}*\\n` +\n  `• Suma brutto: *${invoices.totalBrutto} PLN*\\n` +\n  `• Wyslane do KSeF: *${invoices.sentToKsef}*\\n` +\n  `• Bledy: *${invoices.errors}*\\n\\n` +\n  `${errorEmoji} *Automatyzacje (n8n)*\\n` +\n  `• Bledy wykonan: *${n8nErrors.totalErrors}*\\n` +\n  (n8nErrors.topErrors.length > 0 \n    ? `• Top bledy:\\n  - ${n8nErrors.topErrors.join('\\n  - ')}\\n\\n`\n    : `• Wszystkie workflow dzialaly poprawnie :tada:\\n\\n`) +\n  `:globe_with_meridians: *Strona www*\\n` +\n  `• Odslony: *${analytics.pageViews}*\\n` +\n  `• Unikalni odwiedzajacy: *${analytics.uniqueVisitors}*\\n` +\n  `• Wskaznik odrzucen: *${analytics.bounceRate}*\\n\\n` +\n  `---\\n` +\n  `_Raport wygenerowany automatycznie o ${new Date().toLocaleTimeString('pl-PL')} przez AutomateForge_`;\n\nreturn [{\n  json: {\n    digestText: digestText,\n    date: yesterday,\n    summary: {\n      orders: orders,\n      invoices: invoices,\n      n8nErrors: n8nErrors,\n      analytics: analytics\n    }\n  }\n}];"
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000011",
+      "name": "Zbuduj raport",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [1320, 400]
+    },
+    {
+      "parameters": {
+        "channel": "#daily-digest",
+        "text": "={{ $json.digestText }}",
+        "otherOptions": {
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000012",
+      "name": "Slack - Wyslij raport",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1560, 400],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.summary.n8nErrors.totalErrors }}",
+              "operation": "larger",
+              "value2": 5
+            }
+          ]
+        }
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000013",
+      "name": "Duzo bledow?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1800, 400]
+    },
+    {
+      "parameters": {
+        "channel": "#ops-alerts",
+        "text": ":rotating_light: *ALERT: Duza liczba bledow automatyzacji*\n\nWczoraj ({{ $json.date }}) wystapilo *{{ $json.summary.n8nErrors.totalErrors }}* bledow wykonan workflow.\n\nTop problematyczne workflow:\n{{ $json.summary.n8nErrors.topErrors.join('\\n') }}\n\nProsze sprawdzic logi n8n i podjac dzialania naprawcze.",
+        "otherOptions": {}
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000014",
+      "name": "Slack - Alert ops",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [2040, 300],
+      "credentials": {
+        "slackApi": {
+          "id": "TODO_SLACK_CREDENTIALS_ID",
+          "name": "Slack API - UZUPELNIJ"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e1b2c3d4-0005-4000-8000-000000000015",
+      "name": "OK - Koniec",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2040, 500]
+    }
+  ],
+  "connections": {
+    "Cron - Codziennie 8:00 Pn-Pt": {
+      "main": [
+        [
+          {
+            "node": "BaseLinker - Zamowienia z wczoraj",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "SQL - Faktury z wczoraj",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "n8n API - Bledy wykonan",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Analytics - Statystyki www",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BaseLinker - Zamowienia z wczoraj": {
+      "main": [
+        [
+          {
+            "node": "Przetworz zamowienia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SQL - Faktury z wczoraj": {
+      "main": [
+        [
+          {
+            "node": "Przetworz faktury",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "n8n API - Bledy wykonan": {
+      "main": [
+        [
+          {
+            "node": "Przetworz bledy n8n",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analytics - Statystyki www": {
+      "main": [
+        [
+          {
+            "node": "Przetworz analytics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Przetworz zamowienia": {
+      "main": [
+        [
+          {
+            "node": "Polacz wszystkie dane",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Przetworz faktury": {
+      "main": [
+        [
+          {
+            "node": "Polacz wszystkie dane",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Przetworz bledy n8n": {
+      "main": [
+        [
+          {
+            "node": "Polacz wszystkie dane",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Przetworz analytics": {
+      "main": [
+        [
+          {
+            "node": "Polacz wszystkie dane",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Polacz wszystkie dane": {
+      "main": [
+        [
+          {
+            "node": "Zbuduj raport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Zbuduj raport": {
+      "main": [
+        [
+          {
+            "node": "Slack - Wyslij raport",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - Wyslij raport": {
+      "main": [
+        [
+          {
+            "node": "Duzo bledow?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Duzo bledow?": {
+      "main": [
+        [
+          {
+            "node": "Slack - Alert ops",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OK - Koniec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Raportowanie",
+      "id": "tag-raporty"
+    },
+    {
+      "name": "Slack",
+      "id": "tag-slack"
+    },
+    {
+      "name": "AutomateForge",
+      "id": "tag-automateforge"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-01-15T10:00:00.000Z",
+  "versionId": "1"
+}
