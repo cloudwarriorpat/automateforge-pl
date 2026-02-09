@@ -6,6 +6,8 @@ const NAV_LINKS = [
   { to: '/ksef', label: 'KSeF Studio' },
   { to: '/agents', label: 'AI Agents' },
   { to: '/templates', label: 'Szablony' },
+  { to: '/partnerzy', label: 'Partnerzy' },
+  { to: '/blog', label: 'Blog' },
 ];
 
 export default function Navbar() {
