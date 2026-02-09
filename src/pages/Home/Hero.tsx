@@ -43,8 +43,8 @@ export default function Hero() {
               Bezplatny audyt 30 min
               <ChevronRight className="w-5 h-5" />
             </Link>
-            <Link to="/templates" className="btn-secondary text-base px-8 py-4">
-              Przegladaj szablony
+            <Link to="/ksef" className="btn-secondary text-base px-8 py-4">
+              Sprawdz gotowosc KSeF
             </Link>
           </div>
         </div>

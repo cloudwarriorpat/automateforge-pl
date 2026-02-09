@@ -28,16 +28,13 @@ export default function CTA() {
 
             <p className="text-lg text-steel-400 max-w-xl mx-auto mb-8">
               Umow sie na bezplatny 30-minutowy audyt. Pokaz nam swoje procesy,
-              a my pokarzemy Ci 10 automatyzacji, ktore zmienia Twoj biznes.
+              a my pokarzemy Ci konkretne mozliwosci automatyzacji.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/kontakt" className="btn-primary text-base px-8 py-4">
                 Umow bezplatny audyt
                 <ChevronRight className="w-5 h-5" />
-              </Link>
-              <Link to="/templates" className="btn-secondary text-base px-8 py-4">
-                Przegladaj szablony
               </Link>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import HomePage from './pages/Home';
 import KSeFPage from './pages/KSeF';
@@ -6,7 +6,6 @@ import AgentsPage from './pages/Agents';
 import TemplatesPage from './pages/Templates';
 import ContactPage from './pages/Contact';
 import PartnersPage from './pages/Partners';
-import BlogPage from './pages/Blog';
 import ScrollToTop from './components/ScrollToTop';
 
 export default function App() {
@@ -21,7 +20,7 @@ export default function App() {
           <Route path="/templates" element={<TemplatesPage />} />
           <Route path="/kontakt" element={<ContactPage />} />
           <Route path="/partnerzy" element={<PartnersPage />} />
-          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -94,7 +94,7 @@ export default function PartnersPage() {
             {[
               { value: '15%', label: 'Prowizji recurring od kazdego klienta' },
               { value: '0 PLN', label: 'Koszt dolaczenia do programu' },
-              { value: '5+', label: 'Aktywnych partnerstw -- cel na 60 dni' },
+              { value: 'Nowy', label: 'Dolacz jako jeden z pierwszych partnerow' },
             ].map((stat, i) => (
               <div
                 key={stat.label}
