@@ -89,8 +89,12 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     async function fetchTemplates() {
-      const { data } = await supabase.from('templates').select('*').order('popular', { ascending: false });
-      if (data) setTemplates(data);
+      const { data, error } = await supabase.from('templates').select('*').order('popular', { ascending: false });
+      if (error) {
+        console.error('Blad ladowania szablonow:', error.message);
+      } else if (data) {
+        setTemplates(data);
+      }
       setLoading(false);
     }
     fetchTemplates();

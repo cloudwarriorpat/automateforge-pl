@@ -71,8 +71,8 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} AutomateForge. Wszelkie prawa zastrzezone.
           </p>
           <div className="flex items-center gap-6 text-sm text-steel-500">
-            <span>Polityka prywatnosci</span>
-            <span>Regulamin</span>
+            <Link to="/polityka-prywatnosci" className="hover:text-steel-300 transition-colors">Polityka prywatnosci</Link>
+            <Link to="/regulamin" className="hover:text-steel-300 transition-colors">Regulamin</Link>
           </div>
         </div>
       </div>

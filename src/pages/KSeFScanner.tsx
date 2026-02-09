@@ -207,7 +207,7 @@ export default function KSeFScannerPage() {
     e.preventDefault();
     setSending(true);
     const level = getResultLevel(score);
-    await supabase.from('leads').insert({
+    const { error } = await supabase.from('leads').insert({
       name: '',
       email,
       company: '',
@@ -215,7 +215,7 @@ export default function KSeFScannerPage() {
       message: `Wynik skanera KSeF: ${score}/${MAX_SCORE} (${level.title})`,
     });
     setSending(false);
-    setEmailSent(true);
+    if (!error) setEmailSent(true);
   }
 
   const level = getResultLevel(score);
