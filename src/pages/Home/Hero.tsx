@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Zap, Shield, Bot } from 'lucide-react';
+import { ChevronRight, Zap, Shield, Bot, AlertTriangle } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -12,7 +12,13 @@ export default function Hero() {
 
       <div className="section-container relative z-10 pt-24 pb-16 lg:pt-32 lg:pb-24">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm font-medium mb-8 animate-fade-in">
+          {/* Urgency badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium mb-4 animate-fade-in">
+            <AlertTriangle className="w-4 h-4" />
+            KSeF deadline: 1 kwietnia 2026 dla MSP
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-sm font-medium mb-8 animate-fade-in ml-2">
             <Zap className="w-4 h-4" />
             Kuznia automatyzacji dla polskiego biznesu
           </div>
@@ -22,9 +28,14 @@ export default function Hero() {
             <span className="gradient-text">Przyspieszamy wzrost.</span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-steel-400 max-w-2xl mx-auto leading-relaxed mb-10 animate-fade-up animate-delay-200">
+          <p className="text-lg sm:text-xl text-steel-400 max-w-2xl mx-auto leading-relaxed mb-4 animate-fade-up animate-delay-200">
             Wdrozenia KSeF, agenci AI dla back-office i gotowe szablony integracji
             z polskimi narzedziami. Wszystko, czego potrzebuje Twoj biznes w 2026.
+          </p>
+
+          <p className="text-base text-steel-500 max-w-xl mx-auto mb-10 animate-fade-up animate-delay-200">
+            Adopcja AI w Polsce: zaledwie 5.9%. 2.5M+ firm musi wdrozyc KSeF.
+            To Twoja szansa -- dzialaj, zanim zrobi to konkurencja.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up animate-delay-300">
@@ -43,21 +54,21 @@ export default function Hero() {
             {
               icon: Shield,
               label: 'KSeF Studio',
-              desc: 'Wdrozenia i monitoring',
+              desc: 'Nigdy wiecej stresu z e-fakturami',
               to: '/ksef',
               delay: 'animate-delay-100',
             },
             {
               icon: Bot,
               label: 'AI Agents',
-              desc: 'Automatyzacja back-office',
+              desc: 'Zespol ktory nigdy nie spi',
               to: '/agents',
               delay: 'animate-delay-200',
             },
             {
               icon: Zap,
               label: 'Szablony PL',
-              desc: 'Gotowe integracje',
+              desc: 'Gotowe workflow w 10 minut',
               to: '/templates',
               delay: 'animate-delay-300',
             },

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import {
   Send, CheckCircle2, Phone, Mail, MapPin,
-  Clock, ChevronRight, AlertCircle
+  Clock, AlertCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useInView } from '../hooks/useInView';

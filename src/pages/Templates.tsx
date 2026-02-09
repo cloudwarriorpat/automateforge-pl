@@ -146,12 +146,16 @@ export default function TemplatesPage() {
               Sklep z szablonami
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Gotowe automatyzacje{' '}
-              <span className="gradient-text">dla polskiego biznesu</span>
+              Gotowe workflow{' '}
+              <span className="gradient-text">w 10 minut</span>
             </h1>
-            <p className="text-xl text-steel-400 leading-relaxed mb-8 max-w-2xl">
-              Szablony Make, n8n i Zapier z polskimi integracjami. Kup, wdraz, oszczedzaj
-              -- bez tygodni konfiguracji.
+            <p className="text-xl text-steel-400 leading-relaxed mb-4 max-w-2xl">
+              Kupujesz szablon, importujesz do Make/n8n/Zapier, podlaczasz konta -- dziala.
+              Zero kodowania, zero czekania na devow.
+            </p>
+            <p className="text-base text-steel-500 mb-8 max-w-2xl">
+              Top sellers: KSeF Auto-Sender, BaseLinker-InPost Tracker, Allegro Order Processor,
+              Lead Scorer, Invoice Cost Guard.
             </p>
           </div>
         </div>
