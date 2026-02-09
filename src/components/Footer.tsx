@@ -5,6 +5,7 @@ const FOOTER_LINKS = {
   'Uslugi': [
     { to: '/ksef', label: 'KSeF Studio' },
     { to: '/agents', label: 'AI Agents' },
+    { to: '/templates', label: 'Szablony' },
   ],
   'Firma': [
     { to: '/kontakt', label: 'Kontakt' },

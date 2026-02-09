@@ -89,7 +89,6 @@ Podczas projektu będziemy się komunikować następującymi kanałami:
 W przypadku pilnych spraw możesz się z nami skontaktować:
 
 - **Email:** pilne@automateforge.pl
-- **Telefon:** +48 XXX XXX XXX (pon-pt, 8:00-18:00)
 
 ---
 

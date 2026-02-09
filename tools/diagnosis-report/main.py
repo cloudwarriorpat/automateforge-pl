@@ -896,7 +896,6 @@ def build_next_steps(styles):
         "Zapraszamy do kontaktu w celu omówienia raportu i rozpoczęcia współpracy:<br/><br/>"
         "<b>AutomateForge.pl</b><br/>"
         "Email: kontakt@automateforge.pl<br/>"
-        "Telefon: +48 XXX XXX XXX<br/>"
         "Strona: https://automateforge.pl<br/><br/>"
         "Dziękujemy za zainteresowanie naszymi usługami!"
     )

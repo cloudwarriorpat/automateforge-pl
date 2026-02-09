@@ -34,7 +34,7 @@ const SERVICES = [
     description: 'Gotowe workflowy pod polski rynek: KSeF, BaseLinker, Allegro, Fakturownia, ifirma, InPost, Przelewy24. Kup, wdraz, dzialaj -- bez tygodni konfiguracji.',
     features: ['Make / n8n / Zapier', 'Polskie integracje', 'Dokumentacja PL', 'Wsparcie wdrozeniowe'],
     to: '/templates',
-    badge: 'Wkrotce',
+    badge: 'Od 149 PLN',
     color: 'from-brand-400 to-brand-600',
     bgColor: 'bg-brand-500/10',
     borderColor: 'border-brand-500/20',
