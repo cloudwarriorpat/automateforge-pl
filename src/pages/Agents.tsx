@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
-  Bot, ChevronRight, Mail, Users, Receipt, Brain,
+  Bot, ChevronRight, Mail, Receipt, Brain,
   CheckCircle2, ArrowRight, Eye, Cog, BarChart3,
   MessageSquare, Target, FileSearch
 } from 'lucide-react';
@@ -13,49 +13,36 @@ const AGENTS = [
     icon: Mail,
     title: 'Triage maili',
     description: 'Klasyfikuje przychodzace maile (faktury, reklamacje, dostawcy, zapytania), tworzy zadania w Asanie/Jirze, taguje, proponuje odpowiedzi.',
-    stats: '15 000+ maili/mies.',
-    accuracy: '94% trafnosc',
+    capability: 'Klasyfikacja i routing',
     tools: ['Gmail', 'Outlook', 'Asana', 'Jira', 'Slack'],
   },
   {
     icon: Target,
     title: 'Kwalifikacja leadow',
     description: 'Research firmy, scoring na bazie ICP, enrichment danych, automatyczny follow-up i routing do handlowca z kontekstem.',
-    stats: '3x wiecej SQL',
-    accuracy: 'Lead to Call 24h',
+    capability: 'Lead scoring i enrichment',
     tools: ['Pipedrive', 'HubSpot', 'Apollo', 'LinkedIn', 'Lemlist'],
   },
   {
     icon: Receipt,
     title: 'Kontrola kosztow',
     description: 'Analiza faktur i umow: wykrywanie anomalii, duplikatow, przekroczen budzetow. Automatyczne alerty i raporty.',
-    stats: '85% mniej manualnej pracy',
-    accuracy: '99.2% detekcja',
-    tools: ['ifirma', 'wFirma', 'Google Sheets', 'Slack', 'Power BI'],
+    capability: 'Wykrywanie anomalii',
+    tools: ['ifirma', 'wFirma', 'Google Sheets', 'Slack'],
   },
   {
     icon: MessageSquare,
     title: 'Obsluga klienta L1',
     description: 'Odpowiada na FAQ, przekierowuje zlozone sprawy, tworzy tickety, eskaluje pilne problemy. Czlowiek w petli na L2+.',
-    stats: '70% spraw bez eskalacji',
-    accuracy: '< 30s czas reakcji',
+    capability: 'FAQ + eskalacja',
     tools: ['Intercom', 'Zendesk', 'Slack', 'Notion'],
   },
   {
     icon: FileSearch,
     title: 'Analiza dokumentow',
     description: 'Ekstrakcja danych z umow, ofert, faktur. Porownywanie warunkow, wykrywanie ryzyk, generowanie podsumoan.',
-    stats: '10x szybciej niz recznie',
-    accuracy: '97% dokladnosc',
+    capability: 'Ekstrakcja i porownanie',
     tools: ['Google Drive', 'SharePoint', 'Notion', 'Slack'],
-  },
-  {
-    icon: Users,
-    title: 'Onboarding HR',
-    description: 'Automatyczny onboarding nowych pracownikow: dokumenty, dostepy, zadania szkoleniowe, przypomnienia, checklisty.',
-    stats: '90% automatyzacji',
-    accuracy: '0 pominiectych krokow',
-    tools: ['Google Workspace', 'Slack', 'Notion', 'BambooHR'],
   },
 ];
 
@@ -83,14 +70,6 @@ const PRICING = [
     features: ['Do 3 agentow', 'Custom prompty', 'Monitoring 24/7', 'Slack wsparcie', 'Miesieczne raporty', 'Prompt updates', 'Czlowiek w petli'],
     highlight: true,
   },
-  {
-    name: 'Enterprise',
-    price: '80 000',
-    monthly: '15 000',
-    description: 'Pelna obsluga AI agentow dla calego back-office.',
-    features: ['Unlimited agentow', 'Dedykowany team', 'Monitoring proaktywny', 'SLA 2h', 'Custom integracje', 'Kwartalne przeglady', 'Szkolenia zespolu'],
-    highlight: false,
-  },
 ];
 
 function AgentCard({ agent, index }: { agent: typeof AGENTS[0]; index: number }) {
@@ -111,11 +90,7 @@ function AgentCard({ agent, index }: { agent: typeof AGENTS[0]; index: number })
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white">{agent.title}</h3>
-          <div className="flex gap-3 mt-1">
-            <span className="text-xs text-sky-400 font-medium">{agent.stats}</span>
-            <span className="text-xs text-steel-500">|</span>
-            <span className="text-xs text-emerald-400 font-medium">{agent.accuracy}</span>
-          </div>
+          <span className="text-xs text-sky-400 font-medium">{agent.capability}</span>
         </div>
       </div>
       <p className="text-sm text-steel-400 leading-relaxed mb-5">{agent.description}</p>
@@ -131,7 +106,6 @@ function AgentCard({ agent, index }: { agent: typeof AGENTS[0]; index: number })
 export default function AgentsPage() {
   const { ref: procRef, isInView: procInView } = useInView();
   const { ref: priceRef, isInView: priceInView } = useInView();
-  const { ref: problemRef, isInView: problemInView } = useInView();
 
   return (
     <div className="pt-20 lg:pt-24">
@@ -145,7 +119,7 @@ export default function AgentsPage() {
           <div className="max-w-3xl">
             <span className="badge bg-sky-500/10 text-sky-400 border border-sky-500/20 mb-6 inline-flex items-center gap-2">
               <Bot className="w-3.5 h-3.5" />
-              AI Agents 2026
+              AI Agents
             </span>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
               Twoj zespol back-office,{' '}
@@ -156,8 +130,8 @@ export default function AgentsPage() {
               -- 24/7, bez urlopow, bez bledow. Dzialasz jak firma 10x wieksza.
             </p>
             <p className="text-base text-steel-500 mb-8 max-w-2xl">
-              Firmy wydaja 5-15K PLN/mies. na pracownikow robiaccych reczna prace.
-              Zastap ich agentem AI z czlowiekiem w petli.
+              Kazdy agent jest budowany pod Twoje procesy, z czlowiekiem w petli
+              i jasno zdefiniowanymi granicami decyzyjnosci.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/kontakt" className="btn-primary text-base px-8 py-4">
@@ -168,30 +142,6 @@ export default function AgentsPage() {
                 Zobacz cennik
               </a>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem Statement */}
-      <section className="py-16 lg:py-20 bg-gradient-to-r from-sky-500/5 via-blue-500/5 to-sky-500/5 border-y border-steel-800/30">
-        <div className="section-container">
-          <div ref={problemRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { value: '5-15K PLN', label: 'Miesieczny koszt recznej pracy w back-office' },
-              { value: '30+ godzin', label: 'Traconych miesiecznie na zadania do automatyzacji' },
-              { value: '5.9%', label: 'Firm w PL korzysta z AI -- ogromna luka' },
-            ].map((stat, i) => (
-              <div
-                key={stat.label}
-                className={`text-center transition-all duration-500 ${
-                  problemInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-                }`}
-                style={{ transitionDelay: `${i * 100}ms` }}
-              >
-                <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500 mb-2">{stat.value}</p>
-                <p className="text-sm text-steel-400">{stat.label}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -254,7 +204,7 @@ export default function AgentsPage() {
             highlight="AI Agents"
             description="Projekt + abonament miesieczny. Monitoring, prompt updates i wsparcie wliczone."
           />
-          <div ref={priceRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          <div ref={priceRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto">
             {PRICING.map((plan, i) => (
               <div
                 key={plan.name}
@@ -265,7 +215,7 @@ export default function AgentsPage() {
               >
                 {plan.highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                    <span className="badge bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs">Najpopularniejszy</span>
+                    <span className="badge bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs">Rekomendowany</span>
                   </div>
                 )}
                 <div className={`glass-card p-8 h-full flex flex-col ${plan.highlight ? 'border-sky-500/30' : ''}`}>
@@ -295,6 +245,9 @@ export default function AgentsPage() {
               </div>
             ))}
           </div>
+          <p className="text-center text-sm text-steel-500 mt-8">
+            Potrzebujesz wiecej niz 3 agentow lub niestandardowy zakres? <Link to="/kontakt" className="text-brand-400 hover:text-brand-300 transition-colors">Skontaktuj sie</Link> -- przygotujemy indywidualny plan.
+          </p>
         </div>
       </section>
 

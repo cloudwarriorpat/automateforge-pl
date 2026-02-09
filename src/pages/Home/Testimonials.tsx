@@ -1,25 +1,20 @@
-import { Star } from 'lucide-react';
+import { Rocket, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import SectionHeading from '../../components/SectionHeading';
 import { useInView } from '../../hooks/useInView';
 
-const TESTIMONIALS = [
+const REASONS = [
   {
-    name: 'Marta Kowalska',
-    role: 'CFO, TechDistro sp. z o.o.',
-    content: 'Wdrozenie KSeF z AutomateForge zajelo 2 tygodnie zamiast planowanych 2 miesiecy. Monitoring odrzutow uratwal nas juz w pierwszym miesiacu.',
-    avatar: 'MK',
+    title: 'Deadline KSeF sie nie cofnie',
+    description: 'Od 1 kwietnia 2026 KSeF jest obowiazkowy dla MSP. Firmy, ktore zaczna wczesniej, unikna chaosu i kolejek.',
   },
   {
-    name: 'Piotr Nowak',
-    role: 'CEO, E-commerce Pro',
-    content: 'Szablony integracji Allegro-BaseLinker-InPost zaoszczedzily nam 40h pracy miesiecznie. Najlepsza inwestycja tego roku.',
-    avatar: 'PN',
+    title: 'AI adopcja w Polsce: 5.9%',
+    description: 'Ogromna luka rynkowa. Firmy, ktore wdroza automatyzacje teraz, beda miec przewage operacyjna nad konkurencja.',
   },
   {
-    name: 'Anna Wisniewska',
-    role: 'COO, SaaS Solutions',
-    content: 'Agent AI do triage maili przetworzyl 15 000 wiadomosci w pierwszym miesiacu z 94% trafnoscia. Zespol wreszcie moze sie skupic na rzeczach waznych.',
-    avatar: 'AW',
+    title: 'Gwarancja rezultatu',
+    description: 'Odwracamy ryzyko na siebie: 90-dniowa gwarancja zwrotu, platnosc 50/30/20 powiazana z wynikami.',
   },
 ];
 
@@ -31,38 +26,40 @@ export default function Testimonials() {
       <div className="absolute inset-0 bg-gradient-to-b from-steel-950 via-steel-900/20 to-steel-950" />
       <div className="section-container relative z-10">
         <SectionHeading
-          badge="Opinie"
-          title="Zaufali nam"
-          highlight="liderzy branz"
-          description="Firmy, ktore juz automatyzuja procesy z AutomateForge."
+          badge="Dlaczego teraz"
+          title="Wczesni uzytkownicy"
+          highlight="wygrywaja"
+          description="Jestesmy na poczatku drogi -- i szukamy firm, ktore chca automatyzowac pierwsze. Oto dlaczego warto zaczac teraz."
         />
 
         <div ref={ref} className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-          {TESTIMONIALS.map((t, i) => (
+          {REASONS.map((r, i) => (
             <div
-              key={t.name}
+              key={r.title}
               className={`glass-card p-8 transition-all duration-700 ${
                 isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
               style={{ transitionDelay: `${i * 150}ms` }}
             >
-              <div className="flex gap-1 mb-5">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-brand-400 text-brand-400" />
-                ))}
-              </div>
-              <p className="text-steel-300 leading-relaxed mb-6">"{t.content}"</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-sm font-bold text-white">
-                  {t.avatar}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{t.name}</p>
-                  <p className="text-xs text-steel-400">{t.role}</p>
-                </div>
-              </div>
+              <h3 className="text-lg font-semibold text-white mb-3">{r.title}</h3>
+              <p className="text-sm text-steel-400 leading-relaxed">{r.description}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-12 text-center">
+          <div className="glass-card p-8 max-w-2xl mx-auto border-brand-500/10">
+            <Rocket className="w-10 h-10 text-brand-400 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-white mb-2">Szukamy pierwszych 10 klientow</h3>
+            <p className="text-sm text-steel-400 mb-6">
+              Jako jeden z pierwszych klientow dostaniesz priorytetowe wdrozenie, bezposredni kontakt
+              z founderem i wplyw na kierunek produktu.
+            </p>
+            <Link to="/kontakt" className="btn-primary text-sm px-6 py-3">
+              Dolacz do early adopters
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </div>
     </section>

@@ -1,10 +1,10 @@
 import { useInView } from '../../hooks/useInView';
 
 const STATS = [
-  { value: '85%', label: 'Redukcja czasu manualnej pracy' },
-  { value: '3x', label: 'Szybsze przetwarzanie faktur' },
-  { value: '24h', label: 'Od leada do rozmowy handlowej' },
-  { value: '99.9%', label: 'Uptime monitorowanych procesow' },
+  { value: 'KSeF', label: 'Obowiazkowy od 1 kwietnia 2026 dla MSP' },
+  { value: '2.5M+', label: 'Polskich firm musi wdrozyc KSeF' },
+  { value: '5.9%', label: 'Firm w Polsce korzysta z AI -- ogromna luka' },
+  { value: '50/30/20', label: 'Platnosc powiazana z wynikami' },
 ];
 
 export default function Stats() {

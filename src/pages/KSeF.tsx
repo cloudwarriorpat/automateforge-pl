@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
   ChevronRight, FileCheck, AlertTriangle, BarChart3,
   RefreshCw, CheckCircle2, Clock, Zap, ArrowRight, Server,
-  Bell, FileText, Lock, Gift
+  Bell, FileText, Lock
 } from 'lucide-react';
 import SectionHeading from '../components/SectionHeading';
 import Guarantee from '../components/Guarantee';
@@ -12,7 +12,7 @@ const FEATURES = [
   {
     icon: Server,
     title: 'Integracja ERP/Fakturowanie',
-    description: 'Laczymy Twoj system (SAP, Comarch, Enova, Symfonia, Fakturownia, wFirma, ifirma) z KSeF 2.0. Dwukierunkowa synchronizacja z pelna walidacja.',
+    description: 'Laczymy Twoj system (Fakturownia, wFirma, ifirma, a takze Comarch, Enova, Symfonia) z KSeF 2.0. Dwukierunkowa synchronizacja z pelna walidacja.',
   },
   {
     icon: Bell,
@@ -36,8 +36,8 @@ const FEATURES = [
   },
   {
     icon: BarChart3,
-    title: 'Raporty i BI',
-    description: 'Dashboard z metrykami: wolumen faktur, czas przetwarzania, procent odrzutow. Eksport do Power BI, Google Sheets, Looker.',
+    title: 'Raporty i dashboard',
+    description: 'Dashboard z metrykami: wolumen faktur, czas przetwarzania, procent odrzutow. Eksport do Google Sheets.',
   },
 ];
 
@@ -63,26 +63,20 @@ const PRICING = [
     period: 'jednorazowo',
     monthly: '3 000',
     description: 'Dla firm z wieloma zrodlami faktur i potrzeba zaawansowanego monitoringu.',
-    features: ['Do 3 integracji', 'Monitoring 24/7', 'Auto-korekcja odrzutow', 'Slack/Teams alerty', 'Dashboard BI', 'SLA 4h', 'Aktualizacje schem'],
+    features: [
+      'Do 3 integracji',
+      'Monitoring 24/7',
+      'Auto-korekcja odrzutow',
+      'Slack/Teams alerty',
+      'Dashboard z raportami',
+      'SLA 4h',
+      'Aktualizacje schem',
+      'Audyt gotowosci KSeF',
+      'Szablon polityki e-fakturowania',
+      'Checklisty walidacji JPK-V7M/K',
+    ],
     highlight: true,
-    bonuses: true,
   },
-  {
-    name: 'Enterprise',
-    price: '25 000',
-    period: 'jednorazowo',
-    monthly: '6 000',
-    description: 'Pelna obsluga KSeF. My sie martwimy, Ty sie skupiasz na biznesie.',
-    features: ['Unlimited integracji', 'Dedykowany opiekun', 'Auto-korekcja + retry', 'Monitoring proaktywny', 'Custom raporty', 'SLA 1h', 'Kwartalne przeglady'],
-    highlight: false,
-  },
-];
-
-const BONUSES = [
-  { title: 'Audyt gotowosci KSeF', value: '1 500' },
-  { title: 'Szablon polityki e-fakturowania', value: '800' },
-  { title: 'Checklisty walidacji JPK-V7M/K', value: '500' },
-  { title: 'Nagranie wideo "KSeF od A do Z"', value: '997' },
 ];
 
 function PricingCard({ plan, index }: { plan: typeof PRICING[0]; index: number }) {
@@ -96,7 +90,7 @@ function PricingCard({ plan, index }: { plan: typeof PRICING[0]; index: number }
     >
       {plan.highlight && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-          <span className="badge-brand text-xs">Najpopularniejszy</span>
+          <span className="badge-brand text-xs">Rekomendowany</span>
         </div>
       )}
       <div className={`glass-card p-8 h-full flex flex-col ${plan.highlight ? 'border-brand-500/30 glow-brand' : ''}`}>
@@ -133,9 +127,6 @@ function PricingCard({ plan, index }: { plan: typeof PRICING[0]; index: number }
 export default function KSeFPage() {
   const { ref: timelineRef, isInView: timelineInView } = useInView();
   const { ref: featRef, isInView: featInView } = useInView();
-  const { ref: bonusRef, isInView: bonusInView } = useInView();
-
-  const totalBonusValue = BONUSES.reduce((sum, b) => sum + parseInt(b.value.replace(/\s/g, '')), 0);
 
   return (
     <div className="pt-20 lg:pt-24">
@@ -250,68 +241,14 @@ export default function KSeFPage() {
             highlight="pakiety"
             description="Bez ukrytych kosztow. Setup + abonament miesieczny z pelnym wsparciem i aktualizacjami."
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 max-w-3xl mx-auto">
             {PRICING.map((plan, i) => (
               <PricingCard key={plan.name} plan={plan} index={i} />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Bonus Stacking - PRO */}
-      <section className="py-24 lg:py-32">
-        <div className="section-container">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <span className="badge bg-brand-500/10 text-brand-400 border border-brand-500/20 mb-6 inline-flex items-center gap-2">
-                <Gift className="w-3.5 h-3.5" />
-                Bonusy do pakietu Pro
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-                Dostajesz o wiele <span className="gradient-text">wiecej niz myslisz</span>
-              </h2>
-              <p className="text-lg text-steel-400">
-                Kazdy klient Pro otrzymuje bonusy o lacznej wartosci {totalBonusValue.toLocaleString('pl-PL')} PLN -- gratis.
-              </p>
-            </div>
-
-            <div ref={bonusRef} className="space-y-4 mb-8">
-              {BONUSES.map((bonus, i) => (
-                <div
-                  key={bonus.title}
-                  className={`glass-card p-6 flex items-center justify-between transition-all duration-500 ${
-                    bonusInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
-                  }`}
-                  style={{ transitionDelay: `${i * 100}ms` }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center shrink-0">
-                      <Gift className="w-5 h-5 text-brand-400" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-white">{bonus.title}</p>
-                      <p className="text-xs text-emerald-400 font-medium">GRATIS</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-steel-500 line-through">{bonus.value} PLN</p>
-                    <p className="text-sm font-bold text-emerald-400">0 PLN</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="glass-card p-8 text-center border-brand-500/20 glow-brand">
-              <p className="text-steel-400 mb-2">Pakiet Pro + wszystkie bonusy</p>
-              <p className="text-sm text-steel-500 line-through mb-1">Wartosc: 13 787 PLN</p>
-              <p className="text-4xl font-bold text-white mb-2">9 990 PLN <span className="text-lg font-normal text-steel-400">jednorazowo</span></p>
-              <p className="text-sm text-steel-500 mb-6">+ 3 000 PLN/mies. abonament</p>
-              <Link to="/kontakt" className="btn-primary text-base px-8 py-4">
-                Wybierz Pro z bonusami
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
-          </div>
+          <p className="text-center text-sm text-steel-500 mt-8">
+            Potrzebujesz wiecej niz 3 integracje lub niestandardowy zakres? <Link to="/kontakt" className="text-brand-400 hover:text-brand-300 transition-colors">Skontaktuj sie</Link> -- przygotujemy indywidualny plan.
+          </p>
         </div>
       </section>
 

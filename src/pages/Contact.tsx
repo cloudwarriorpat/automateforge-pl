@@ -10,17 +10,14 @@ const SERVICES = [
   { value: 'ksef', label: 'KSeF Studio' },
   { value: 'agents', label: 'AI Agents' },
   { value: 'templates', label: 'Szablony automatyzacji' },
-  { value: 'managed-n8n', label: 'Managed n8n' },
-  { value: 'ai-act', label: 'AI Act Governance' },
-  { value: 'nis2', label: 'NIS2 Readiness' },
-  { value: 'gtm', label: 'GTM Engineering' },
+  { value: 'partnership', label: 'Program partnerski' },
   { value: 'general', label: 'Inne / Nie wiem jeszcze' },
 ];
 
 const STEPS = [
   { icon: Phone, title: 'Bezplatny audyt 30 min', desc: 'Poznajemy Twoje procesy i wyzwania.' },
-  { icon: Mail, title: 'Diagnoza 10 automatyzacji', desc: 'Dostajesz raport z ROI w 48h.' },
-  { icon: CheckCircle2, title: 'Oferta w 3 pakietach', desc: 'Start / Pro / Managed -- bez niespodzianek.' },
+  { icon: Mail, title: 'Diagnoza automatyzacji', desc: 'Dostajesz raport z rekomendacjami w 48h.' },
+  { icon: CheckCircle2, title: 'Oferta dopasowana do potrzeb', desc: 'Start / Pro -- bez niespodzianek.' },
 ];
 
 export default function ContactPage() {
