@@ -51,27 +51,20 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Update image tag in infrastructure repo
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT || secrets.GHCR_TOKEN }}
         run: |
           git config --global user.email "deploy-bot@cloudwarrior.io"
           git config --global user.name "Deploy Bot"
 
-          git clone https://x-access-token:${GH_TOKEN}@github.com/${INFRA_REPO}.git infra
+          git clone https://x-access-token:${{ secrets.GH_PAT }}@github.com/${{ env.INFRA_REPO }}.git infra
           cd infra
 
-          VALUES_FILE="infrastructure/apps/${APP_NAME}/values.yaml"
-          sed -i "s|tag: .*|tag: \"${IMAGE_SHA_TAG}\"|" "${VALUES_FILE}"
+          sed -i "s|tag: .*|tag: \"${{ env.IMAGE_SHA_TAG }}\"|" "infrastructure/apps/${{ env.APP_NAME }}/values.yaml"
 
-          git add "${VALUES_FILE}"
-          git commit -m "chore(deploy): update ${APP_NAME} image to ${IMAGE_SHA_TAG}
-
-Triggered by: ${{ github.repository }}@${{ github.sha }}
-Actor: ${{ github.actor }}" || echo "No changes to commit"
-
+          git add "infrastructure/apps/${{ env.APP_NAME }}/values.yaml"
+          git commit -m "chore(deploy): ${{ env.APP_NAME }} -> ${{ env.IMAGE_SHA_TAG }}" || echo "No changes"
           git push
 
-      - name: Update GHCR pull secret on cluster
+      - name: Refresh GHCR pull secret on cluster
         env:
           KUBECONFIG_CONTENTS: ${{ secrets.KUBECONFIG_CONTENTS }}
         run: |
@@ -81,13 +74,13 @@ Actor: ${{ github.actor }}" || echo "No changes to commit"
           fi
           chmod 600 kubeconfig
 
-          curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+          curl -sLO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
           chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 
           KUBECONFIG="${GITHUB_WORKSPACE}/kubeconfig" kubectl create secret docker-registry ghcr-pull-secret \
-            -n ${NAMESPACE} \
+            -n ${{ env.NAMESPACE }} \
             --docker-server=ghcr.io \
             --docker-username=${{ github.actor }} \
             --docker-password=${{ secrets.GITHUB_TOKEN }} \
             --dry-run=client -o yaml | \
-            KUBECONFIG="${GITHUB_WORKSPACE}/kubeconfig" kubectl apply -f -
+            KUBECONFIG="${GITHUB_WORKSPACE}/kubeconfig" kubectl apply -f - || true
